@@ -1,4 +1,3 @@
-# - Fonction getNextPlayer() dans Phase
 # - Modifier l'ordre des questions Excel
 # - Créer une fin de jeu
 # - Créer un tableau des scores à chaque Phase
@@ -10,16 +9,15 @@
 
 import random
 import csv
-import inflect
 
 #________ Question class
 
 class Question:
 
-    def __init__(self,q,a,p):
-        self.question = q
-        self.answer = a
-        self.possibilities = p
+    def __init__(self,question,answer,possibilities):
+        self.question = question
+        self.answer = answer
+        self.possibilities = possibilities
         self.reward = 0
 
     def getQuestion(self):
@@ -38,16 +36,16 @@ class Question:
 
 class Player:
 
-    def __init__(self,n):
-        self.name = n
+    def __init__(self,name):
+        self.name = name
         self.score = 0
         self.playing = True
 
     def getName(self):
         return self.name
 
-    def increaseScore(self, n):
-        self.score += n
+    def increaseScore(self, amount):
+        self.score += amount
 
     def getScore(self):
         return self.score
@@ -56,9 +54,9 @@ class Player:
         return self.playing
 
     def eliminate(self):
-        if self.playing = True:
+        if self.playing is True:
             self.playing = False
-            currentplayers.remove(self)
+            currentPlayers.remove(self)
             return True
         else:
             return False
@@ -67,12 +65,12 @@ class Player:
 
 class Phase:
 
-    def __init__(self,n,m):
-        self.number = n
+    def __init__(self,number,message):
+        self.number = number
+        self.message = message
         self.possibleQuestions = []
         self.questionHistory = []
-        self.playerHistory = []
-        self.message = m
+        self.lastPlayer = 0
 
     def getNextQuestion(self):
         nextNumber = random.randint(0,len(questions) - 1)
@@ -85,8 +83,12 @@ class Phase:
         return nextQuestion
 
     def getNextPlayer(self):
+        if lastPlayer + 1 <= len(currentPlayers):
+            return currentPlayers[lastPlayer]
+        else:
+            return currentPlayers[0]
 
-    def getPlayerRank(self,p):
+#   def getPlayerRank(self,player):
 
     def isFinished(self):
         return self.number <= 0
@@ -107,18 +109,14 @@ def loadFromCSV(url):
             questions.append(question)
     return questions
 
-def printSpacer(x):
-    for i in range(1,x):
+def printSpacer(lines):
+    for i in range(1,lines):
         print("")
 
 #________ Checks
 
 def checkPlayerNumber(playernumber):
     return True
-
-#________ Dump
-
-inflectEngine = inflect.engine()
 
 #________ Game parameters
 
@@ -130,7 +128,7 @@ questionsURL = ""
 
 game = []
 phasesNumber = 1
-welcomeMessage = ""
+welcomeMessage = "Ceci est le message de bienvenue"
 
     # Phase 1
 
@@ -157,14 +155,14 @@ printSpacer(3)
 players = []
 playernumber = input("How many people are playing ? ")
 printSpacer(1)
-if checkPlayerNumber():
+if checkPlayerNumber(playernumber):
     for i in range(1,playernumber + 1):
         name = input("What is Player " + i + "'s name ? ")
         player = Player(name)
         players.append(player)
         print("Hello " + name + "!")
         printSpacer(1)
-players = currentplayers
+players = currentPlayers
 
 for phase in game:
     printSpacer(20)
@@ -177,12 +175,12 @@ for phase in game:
 
         i = 0
         for possibility in currentQuestion.getPossibilities():
-            print(char(97 + i) " - " + possibility)
+            print(char(97 + i) + " - " + possibility)
             i += 1
 
         if input("Your answer: ") is currentQuestion.getAnswer():
             currentPlayer.increaseScore(currentQuestion.getReward())
-            print("Well played! Your score is now " + currentPlayer.getScore() + " (" + inflectEngine.ordinal(phase.getPlayerRank(currentPlayer)))
+            print("Well played! Your score is now " + currentPlayer.getScore())
         else:
             print("Wrong, " + currentPlayer + " is eliminated :(")
             currentPlayer.eliminate()
