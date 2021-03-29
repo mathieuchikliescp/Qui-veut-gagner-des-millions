@@ -1,12 +1,4 @@
-# - Modifier l'ordre des questions Excel
-# - Créer une fin de jeu
-# - Créer un tableau des scores à chaque Phase
-# - Fonction checkPlayerNumber() dans Checks
-# - Fonction getPlayerRank() dans Phase
-# - Ajouter le paramètre reward à la classe Question
-# -
-# -
-
+import matplotlib.pyplot as plt
 import random
 import csv
 
@@ -17,8 +9,7 @@ class Question:
     def __init__(self,question,answer,possibilities):
         self.question = question
         self.answer = answer
-        self.possibilities = possibilities
-        self.reward = 0
+        self.possibilities = random.sample(possibilities,len(possibilities))
 
     def getQuestion(self):
         return self.question
@@ -29,8 +20,10 @@ class Question:
     def getPossibilities(self):
         return self.possibilities
 
-    def getReward(self):
-        return self.reward
+    def retrieveAnswerIndex(self):
+        for i in range(1,4):
+            if self.answer is self.possibilities[i]:
+                return i
 
 #________ Player class
 
@@ -39,16 +32,26 @@ class Player:
     def __init__(self,name):
         self.name = name
         self.score = 0
+        self.jokers = jokers
         self.playing = True
 
     def getName(self):
         return self.name
 
-    def increaseScore(self, amount):
-        self.score += amount
+    def setScore(self, amount):
+        self.score = amount
 
     def getScore(self):
         return self.score
+
+    def getJokersLeft(self):
+        return self.jokers
+
+    def isJokerLeft(self,joker):
+        return joker in self.jokers
+
+    def useJoker(self,joker):
+        self.jokers.remove(joker)
 
     def isPlaying(self):
         return self.playing
@@ -61,16 +64,43 @@ class Player:
         else:
             return False
 
+#________ Joker intermediate functions
+
+# 50/50
+def getTwoPossibilities(answerIndex):
+    p = [answerIndex, random.choice(range(1,4).pop(answerIndex))]
+    return random.shuffle(p,len(p))
+
+# TO DO
+#def friendSuggestion():
+
+# Help from the public
+def getGraphValues(answerIndex):
+    graphValues = [random.randint(30,100)]
+    remainder = 100 - graphValues[0]
+    for i in range(0,3):
+        gV = random.randint(0,remainder)
+        graphValues.append(gV)
+        remainder -= gV
+    orderedGraphValues = [0,0,0,0]
+    orderedGraphValues[answerIndex] = graphValues[0]
+    graphValues.pop(0)
+    i = 0
+    for oGV in orderedGraphValues:
+        if oGV == 0:
+            orderedGraphValues[i] = graphValues[i]
+            i += 1
+    return orderedGraphValues
+
 #________ Phase class
 
 class Phase:
 
-    def __init__(self,number,message):
-        self.number = number
-        self.message = message
+    def __init__(self,levels):
+        self.number = len(levels)
+        self.levels = levels
         self.possibleQuestions = []
         self.questionHistory = []
-        self.lastPlayer = 0
 
     def getNextQuestion(self):
         nextNumber = random.randint(0,len(questions) - 1)
@@ -82,13 +112,8 @@ class Phase:
         self.questionHistory.append(nextNumber)
         return nextQuestion
 
-    def getNextPlayer(self):
-        if lastPlayer + 1 <= len(currentPlayers):
-            return currentPlayers[lastPlayer]
-        else:
-            return currentPlayers[0]
-
-#   def getPlayerRank(self,player):
+    def getNextScore(self):
+        return int(self.levels[len(self.levels) - self.number])
 
     def isFinished(self):
         return self.number <= 0
@@ -96,16 +121,114 @@ class Phase:
     def getMessage(self):
         return self.message
 
+#________ Interfaces
+
+def WelcomeUI():
+    print("")
+
+def QuestionUI(number_player,player_name,validated_amount,current_amount,joker_available,number_question, question, answer_A, answer_B, answer_C, answer_D):
+    printSpacer(20)
+    interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
+    interface_question(number_question,question, answer_A, answer_B, answer_C, answer_D)
+
+def JokerUI(jokertype,number_player,player_name,validated_amount,current_amount,joker_available,number_question,question, answer_A, answer_B, answer_C, answer_D, answer_AA, answerIndex_AA, answer_BB, answerIndex_BB,answerIndex):
+    if jokertype == "50/50":
+        interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
+        print("")
+        print("                                     Vous avez utilisé le joker '50/50' : voici le résultat : ")
+        print("")
+        interface_question_after_50_50(number_question,question, answer_A, answer_B)
+    if jokertype == "Ami":
+    if jokertype == "Public":
+
+
+def SuccessUI(number_player, player_name, validated_amount, current_amount, joker_available, number_question, question, answer_A, answer_B, answer_C, answer_D):
+    printSpacer(20)
+    interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
+    interface_good_answer(player_name,validated_amount,current_amount)
+
+def FailUI(number_player, player_name, validated_amount):
+    printSpacer(20)
+    print("Joueur n°",number_player, " : ",player_name)
+    print("")
+    print("")
+    print("")
+    print("")
+    print("")
+    print("            Oh non ", player_name, "ce n'était pas la bonne réponse ... Malheureusement l'aventure se termine ici pour vous !" )
+    print("                                Vous repartez avec ", validated_amount,"€ , Félicitation !" )
+    print("")
+    print("")
+    print("")
+    print("")
+    print("")
+    print("Écrivez 'Relancer' pour relancer une partie")
+
+def WonUI():
+    printSpacer(20)
+    print("")
+
+def LostUI():
+    printSpacer(20)
+    print("")
+
+def interface_stats(number_player,player_name,validated_amount,current_amount,joker_available):
+    print("Joueur n°",number_player, ": ", player_name)
+    print("Jokers restants : ", joker_available)
+    print("Montant minimal gagné : ", validated_amount)
+    print("Palier en cours : ", current_amount )
+    print("")
+    print("")
+    print("")
+    print("")
+
+def interface_question(number_question, question, answer_A, answer_B, answer_C, answer_D):
+    print("                                  Question n°",number_question,": ", question," ? ")
+    print("")
+    print("                                       a.",answer_A, "       b.", answer_B)
+    print("                                       c.",answer_C, "       d.", answer_D)
+    print("")
+    print("")
+    print("")
+    print("")
+    print("")
+    print("Écrivez 'A','B','C','D' pour choisir votre réponse ")
+    print("ou écrivez 'Joker' pour utiliser un de vos Jokers ")
+
+def interface_good_answer(player_name,validated_amount,current_amount):
+    print("                          Bravo", player_name, " vous avez répondu juste ! Vous venez de gagner", validated_amount, "€ !" )
+    print("                        Vous pouvez tenter de gagner ", current_amount, "€ en répondant à la prochaine question" )
+    print("")
+    print("                        Attention si vous répondez faux vous ne repartirez qu'avec ", validated_amount, "€ ..." )
+    print("                                                       Alors, on continue ? " )
+    print("")
+    print("")
+    print("")
+    print("")
+    print("Écrivez 'Continuer' pour continuer ou 'Stop' pour partir avec le montant minimal gagné")
+
+def interface_question_after_50_50(number_question, question, answer_AA, answerIndex_AA, answer_BB, answerIndex_BB):
+    print("                                  Question n°",number_question,": ", question," ? ")
+    print("")
+    print("                                       ",chr(96 + answerIndex_AA),".",answer_AA, "       ",chr(96 + answerIndex_BB),".", answer_BB)
+    print("")
+    print("")
+    print("")
+    print("")
+    print("")
+    print("Écrivez 'A','B','C','D' pour choisir votre réponse ")
+    print("ou écrivez 'Joker' pour utiliser un de vos Jokers ")
+
 #________ Utils
 
 def loadFromCSV(url):
     questions = []
-    with open(url) as csvDataFile:
+    with open(url, encoding='utf-8') as csvDataFile:
         data = [row for row in csv.reader(csvDataFile)]
         data.pop(0)
         for row in data:
             cells = row[0].split(";")
-            question = Question(cells[0],"a",[cells[1],cells[2],cells[3],cells[4]])
+            question = Question(cells[0],cells[1],[cells[1],cells[2],cells[3],cells[4]])
             questions.append(question)
     return questions
 
@@ -116,33 +239,42 @@ def printSpacer(lines):
 #________ Checks
 
 def checkPlayerNumber(playernumber):
-    return True
+    try:
+        pn = int(playernumber)
+        if pn in range(1,maxPlayerNumber):
+            return True
+        else:
+            return False
+    except ValueError:
+        return False
 
 #________ Game parameters
 
     # Questions CSV File URL
 
-questionsURL = ""
+questionsURL = "C:/Users/Mathi/iCloudDrive/Documents/Algorithmics and programming/Question pour un champion/data.csv"
 
     # General parameters
 
 game = []
 phasesNumber = 1
+maxPlayerNumber = 2
+jokers = ["50/50","Ami","Public"]
 welcomeMessage = "Ceci est le message de bienvenue"
 
     # Phase 1
 
-phase1 = Phase(10,"Ceci est la 1ère phase")
+phase1 = Phase(["200","300","500","800","1500"])
 game.append(phase1)
 
     # Phase 2
 
-phase2 = Phase(10,"Ceci est la 2ème phase")
+phase2 = Phase(["3000","6000","12000","24000","48000"])
 game.append(phase2)
 
     # Phase 3
 
-phase3 = Phase(10,"Ceci est la 3ème phase")
+phase3 = Phase(["72000","100000","150000","300000","1000000"])
 game.append(phase3)
 
 #________ Main program
@@ -153,34 +285,41 @@ print(welcomeMessage)
 printSpacer(3)
 
 players = []
-playernumber = input("How many people are playing ? ")
+currentPlayers = []
+playernumber = input("Combien de personnes jouent ? ")
 printSpacer(1)
-if checkPlayerNumber(playernumber):
-    for i in range(1,playernumber + 1):
-        name = input("What is Player " + i + "'s name ? ")
-        player = Player(name)
-        players.append(player)
-        print("Hello " + name + "!")
-        printSpacer(1)
-players = currentPlayers
+while checkPlayerNumber(playernumber) == False:
+    playernumber = input("Erreur, veuillez entrer un nombre entre (1-4): ")
+for i in range(1,int(playernumber) + 1):
+    name = input("Quel est le nom du joueur n°" + str(i) + " ? ")
+    player = Player(name)
+    players.append(player)
+    print("Bonjour " + name + "!")
+    printSpacer(1)
+currentPlayers = players
 
 for phase in game:
-    printSpacer(20)
-    print(phase.getMessage())
-
     while phase.isFinished() is False:
-        currentQuestion = phase.getNextQuestion()
-        currentPlayer = phase.getNextPlayer()
-        print("[" + currentPlayer.getName() + "] " + currentQuestion.getQuestion())
+        currentScore = phase.getNextScore()
 
-        i = 0
-        for possibility in currentQuestion.getPossibilities():
-            print(char(97 + i) + " - " + possibility)
-            i += 1
+        for currentPlayer in currentPlayers:
+            currentQuestion = phase.getNextQuestion()
 
-        if input("Your answer: ") is currentQuestion.getAnswer():
-            currentPlayer.increaseScore(currentQuestion.getReward())
-            print("Well played! Your score is now " + currentPlayer.getScore())
-        else:
-            print("Wrong, " + currentPlayer + " is eliminated :(")
-            currentPlayer.eliminate()
+            QuestionUI(currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),"1",currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3])
+            answer = input("# ")
+            if answer == "Joker":
+                joker = input("Quel Joker voulez vous utiliser parmi " + currentPlayer.getJokersLeft() + ": ")
+                while joker not in currentPlayer.getJokersLeft():
+                    joker = input("Erreur, veuillez choisir un Joker parmi " + currentPlayer.getJokersLeft() + ": ")
+                currentPlayer.useJoker(joker)
+                psub = getTwoPossibilities(currentQuestion.retrieveAnswerIndex())
+                JokerUI(joker,currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),"1",currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3],currentQuestion.getPossibilities()[psub[0]],psub[0],currentQuestion.getPossibilities()[psub[1]],psub[1])
+                answer = input("# ")
+            if answer is currentQuestion.getAnswer():
+                currentPlayer.setScore(currentScore)
+                SuccessUI()
+            else:
+                FailUI(currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore())
+                currentPlayer.eliminate()
+                if currentPlayers is []:
+                    LostUI()
