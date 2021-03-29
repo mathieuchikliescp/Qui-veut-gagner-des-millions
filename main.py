@@ -1,4 +1,8 @@
-import matplotlib.pyplot as plt
+# Bugs:
+# - Problème indice question 50/50
+#
+
+#import matplotlib.pyplot as plt
 import random
 import csv
 
@@ -6,10 +10,11 @@ import csv
 
 class Question:
 
-    def __init__(self,question,answer,possibilities):
+    def __init__(self,question,answer,possibilities,difficulty):
         self.question = question
         self.answer = answer
         self.possibilities = random.sample(possibilities,len(possibilities))
+        self.difficulty = int(difficulty)
 
     def getQuestion(self):
         return self.question
@@ -20,8 +25,11 @@ class Question:
     def getPossibilities(self):
         return self.possibilities
 
+    def getDifficulty(self):
+        return self.difficulty
+
     def retrieveAnswerIndex(self):
-        for i in range(1,4):
+        for i in range(0,3):
             if self.answer is self.possibilities[i]:
                 return i
 
@@ -68,8 +76,10 @@ class Player:
 
 # 50/50
 def getTwoPossibilities(answerIndex):
-    p = [answerIndex, random.choice(range(1,4).pop(answerIndex))]
-    return random.shuffle(p,len(p))
+    sample = [0,1,2,3]
+    sample.pop(sample.index(answerIndex))
+    p = [answerIndex, random.choice(sample)]
+    return random.sample(p,len(p))
 
 # TO DO
 #def friendSuggestion():
@@ -96,23 +106,23 @@ def getGraphValues(answerIndex):
 
 class Phase:
 
-    def __init__(self,levels):
-        self.number = len(levels)
+    def __init__(self,levels,difficulty):
+        self.number = len(levels) + 1
         self.levels = levels
+        self.difficulty = difficulty
         self.possibleQuestions = []
-        self.questionHistory = []
+
+        for question in questions:
+            if question.getDifficulty() == self.difficulty:
+                self.possibleQuestions.append(question)
 
     def getNextQuestion(self):
-        nextNumber = random.randint(0,len(questions) - 1)
-        nextQuestion = questions[nextNumber]
-        while nextNumber in self.questionHistory:
-                nextQuestion = questions[nextNumber]
-                nextNumber = random.randint(0,len(questions) - 1)
-        self.number -= 1
-        self.questionHistory.append(nextNumber)
+        nextQuestion = self.possibleQuestions[random.randint(0,len(self.possibleQuestions) - 1)]
+        self.possibleQuestions.pop(self.possibleQuestions.index(nextQuestion))
         return nextQuestion
 
     def getNextScore(self):
+        self.number -= 1
         return int(self.levels[len(self.levels) - self.number])
 
     def isFinished(self):
@@ -131,15 +141,15 @@ def QuestionUI(number_player,player_name,validated_amount,current_amount,joker_a
     interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
     interface_question(number_question,question, answer_A, answer_B, answer_C, answer_D)
 
-def JokerUI(jokertype,number_player,player_name,validated_amount,current_amount,joker_available,number_question,question, answer_A, answer_B, answer_C, answer_D, answer_AA, answerIndex_AA, answer_BB, answerIndex_BB,answerIndex):
+def JokerUI(jokertype,number_player,player_name,validated_amount,current_amount,joker_available,number_question,question, answer_A, answer_B, answer_C, answer_D, answer_AA, answerIndex_AA, answer_BB, answerIndex_BB):
     if jokertype == "50/50":
         interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
         print("")
         print("                                     Vous avez utilisé le joker '50/50' : voici le résultat : ")
         print("")
-        interface_question_after_50_50(number_question,question, answer_A, answer_B)
-    if jokertype == "Ami":
-    if jokertype == "Public":
+        interface_question_after_50_50(number_question,question,answer_AA, answerIndex_AA, answer_BB, answerIndex_BB)
+#    if jokertype == "Ami":
+#    if jokertype == "Public":
 
 
 def SuccessUI(number_player, player_name, validated_amount, current_amount, joker_available, number_question, question, answer_A, answer_B, answer_C, answer_D):
@@ -228,7 +238,7 @@ def loadFromCSV(url):
         data.pop(0)
         for row in data:
             cells = row[0].split(";")
-            question = Question(cells[0],cells[1],[cells[1],cells[2],cells[3],cells[4]])
+            question = Question(cells[0],cells[1],[cells[1],cells[2],cells[3],cells[4]],cells[5])
             questions.append(question)
     return questions
 
@@ -253,6 +263,7 @@ def checkPlayerNumber(playernumber):
     # Questions CSV File URL
 
 questionsURL = "C:/Users/Mathi/iCloudDrive/Documents/Algorithmics and programming/Question pour un champion/data.csv"
+questions = loadFromCSV(questionsURL)
 
     # General parameters
 
@@ -264,25 +275,20 @@ welcomeMessage = "Ceci est le message de bienvenue"
 
     # Phase 1
 
-phase1 = Phase(["200","300","500","800","1500"])
+phase1 = Phase(["200","300","500","800","1500"],1)
 game.append(phase1)
 
     # Phase 2
 
-phase2 = Phase(["3000","6000","12000","24000","48000"])
+phase2 = Phase(["3000","6000","12000","24000","48000"],2)
 game.append(phase2)
 
     # Phase 3
 
-phase3 = Phase(["72000","100000","150000","300000","1000000"])
+phase3 = Phase(["72000","100000","150000","300000","1000000"],3)
 game.append(phase3)
 
 #________ Main program
-
-questions = loadFromCSV(questionsURL)
-
-print(welcomeMessage)
-printSpacer(3)
 
 players = []
 currentPlayers = []
@@ -298,26 +304,28 @@ for i in range(1,int(playernumber) + 1):
     printSpacer(1)
 currentPlayers = players
 
+questionnumber = 0
 for phase in game:
     while phase.isFinished() is False:
         currentScore = phase.getNextScore()
+        questionnumber += 1
 
         for currentPlayer in currentPlayers:
             currentQuestion = phase.getNextQuestion()
 
-            QuestionUI(currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),"1",currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3])
+            QuestionUI(currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),questionnumber,currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3])
             answer = input("# ")
-            if answer == "Joker":
-                joker = input("Quel Joker voulez vous utiliser parmi " + currentPlayer.getJokersLeft() + ": ")
+            if answer.lower() == "joker":
+                joker = input("Quel Joker voulez vous utiliser parmi " + str(currentPlayer.getJokersLeft()) + ": ")
                 while joker not in currentPlayer.getJokersLeft():
-                    joker = input("Erreur, veuillez choisir un Joker parmi " + currentPlayer.getJokersLeft() + ": ")
+                    joker = input("Erreur, veuillez choisir un Joker parmi " + str(currentPlayer.getJokersLeft()) + ": ")
                 currentPlayer.useJoker(joker)
                 psub = getTwoPossibilities(currentQuestion.retrieveAnswerIndex())
-                JokerUI(joker,currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),"1",currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3],currentQuestion.getPossibilities()[psub[0]],psub[0],currentQuestion.getPossibilities()[psub[1]],psub[1])
+                JokerUI(joker,currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),questionnumber,currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3],currentQuestion.getPossibilities()[psub[0]],psub[0],currentQuestion.getPossibilities()[psub[1]],psub[1])
                 answer = input("# ")
-            if answer is currentQuestion.getAnswer():
+            if currentQuestion.getPossibilities()[ord(answer.lower()) - 97] is currentQuestion.getAnswer():
                 currentPlayer.setScore(currentScore)
-                SuccessUI()
+                SuccessUI(playernumber,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),questionnumber,currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3])
             else:
                 FailUI(currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore())
                 currentPlayer.eliminate()
