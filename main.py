@@ -1,10 +1,12 @@
 # Bugs:
 # - Problème indice question 50/50
-#
+# - Problème dans getNextScore
+# - joker global
 
 #import matplotlib.pyplot as plt
 import random
 import csv
+import sys,time,os
 
 #________ Question class
 
@@ -134,21 +136,77 @@ class Phase:
 #________ Interfaces
 
 def WelcomeUI():
+    typewriter("Bienvenue à Qui veut Gagner des millions ! \n\
+    \n\
+    Ce jeu a été développé par Mathieu Chikli, Alexis Joudiou, Antoine Mabille, Quentin-Amaury Hammerer, Théo Tacita et Enzo Zanzarelli \n\
+    dans le cadre du cours 'Digital insight: algorithmics and programming' de l'ESCP Business School ! \n\
+    \n\
+    Amusez-vous bien !")
+
     print("")
+    print("")
+    print("")
+
+    start=input("Écrivez 'Commencer' pour lancer la partie ou 'Rules' pour connaître les règles du jeu!")
+
+    while start != "Commencer" and start != "Rules":
+        start=input("Écrivez 'Commencer' pour lancer la partie ou 'Rules' pour connaître les règles du jeu!")
+    else:
+        if start == "Commencer":
+            print("")
+            typewriter("Que la partie commence ! ")
+        else:
+            print("")
+            print("Tableau des scores : ")
+            print("")
+            print("    15)            1.000.000€")
+            print("    14)            300.000€")
+            print("    13)            150.000€")
+            print("    12)            100.000€")
+            print("    11)            72.000€")
+            print(" PALIER:     48.000€")
+            print("     9)            24.000€")
+            print("     8)            12.000€")
+            print("     7)            6.000€")
+            print("     6)            3.000€")
+            print(" PALIER:     1.500€")
+            print("     4)            800€")
+            print("     3)            500€")
+            print("     2)            300€")
+            print("     1)            200€")
+            print("")
+            print("Règles du jeu : ")
+            print("")
+            print("Le but du jeu est de répondre à une suite de 15 questions de 'culture générale pour tenter de remporter le gain maximal de 1 000 000 €.")
+            print("Si, à un moment ou à un autre, un joueur répond incorrectement, il retombe sur le dernier 'palier' - soit 1 000€, soit 24 000€ - et son jeu est terminé.")
+            print("")
+            print("Par exemple, un candidat qui échoue à la question 13 gagnera 24 000€ . Si il répond incorrectement avant d'atteindre le premier palier (1 000€), il perd tout. ")
+            print("")
+            print("--> 3 jokers sont à votre disposition : le 50/50 qui permet d'éliminer 2 mauvaises réponses, l'appel à un ami et le vote du public. Chaque joker n'est utilisable qu'une seule fois")
+            print("")
+            print("Si il y a plusieurs joueurs, le candidat qui gagne le plus grand montant remporte la partie")
+            print("")
+            start_after_rules=input("Écrivez 'Commencer' pour lancer la partie !")
+            while start_after_rules != "Commencer":
+                start=input("Écrivez 'Commencer' pour lancer la partie !")
+            else:
+                    print("")
+                    typewriter("Que la partie commence ! ")
 
 def QuestionUI(number_player,player_name,validated_amount,current_amount,joker_available,number_question, question, answer_A, answer_B, answer_C, answer_D):
     printSpacer(20)
     interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
     interface_question(number_question,question, answer_A, answer_B, answer_C, answer_D)
 
-def JokerUI(jokertype,number_player,player_name,validated_amount,current_amount,joker_available,number_question,question, answer_A, answer_B, answer_C, answer_D, answer_AA, answerIndex_AA, answer_BB, answerIndex_BB):
+def JokerUI(jokertype,number_player,player_name,validated_amount,current_amount,joker_available,number_question,question, answer_A, answer_B, answer_C, answer_D, answer_AA, answerIndex_AA, answer_BB, answerIndex_BB,good_answer):
     if jokertype == "50/50":
         interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
         print("")
         print("                                     Vous avez utilisé le joker '50/50' : voici le résultat : ")
         print("")
-        interface_question_after_50_50(number_question,question,answer_AA, answerIndex_AA, answer_BB, answerIndex_BB)
-#    if jokertype == "Ami":
+        interface_question_after_50_50(number_question,question,answer_AA,answerIndex_AA,answer_BB,answerIndex_BB)
+    if jokertype == "Ami":
+        page_question_after_ami(number_player,player_name,validated_amount,current_amount,joker_available,number_question,question,answer_A,answer_B,answer_C,answer_D,good_answer)
 #    if jokertype == "Public":
 
 
@@ -220,7 +278,7 @@ def interface_good_answer(player_name,validated_amount,current_amount):
 def interface_question_after_50_50(number_question, question, answer_AA, answerIndex_AA, answer_BB, answerIndex_BB):
     print("                                  Question n°",number_question,": ", question," ? ")
     print("")
-    print("                                       ",chr(96 + answerIndex_AA),".",answer_AA, "       ",chr(96 + answerIndex_BB),".", answer_BB)
+    print("                                       ",chr(97 + answerIndex_AA),".",answer_AA, "       ",chr(97 + answerIndex_BB),".", answer_BB)
     print("")
     print("")
     print("")
@@ -228,6 +286,84 @@ def interface_question_after_50_50(number_question, question, answer_AA, answerI
     print("")
     print("Écrivez 'A','B','C','D' pour choisir votre réponse ")
     print("ou écrivez 'Joker' pour utiliser un de vos Jokers ")
+
+import sys,time,os
+
+def typewriter(message):
+    for char in message:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        if char !="\n":
+            time.sleep(0.02)
+        else:
+            time.sleep(0.2)
+
+def ask_choice_friends():
+    print("Vous avez choisi de faire un Appel a un ami : voici les amis que vous pouvez appeler :")
+    print("")
+    print("Choix n°1 :    Enzo: 46 ans, en couple, 4 enfants, Responsable communication Darty")
+    print("")
+    print("Choix n°2 : Antoine : 20 ans, célibataire, 0 enfant, chômage et alcoolique")
+    print("")
+    print("Choix n°3 : Théa : 31 ans, célibataire, 2 enfants en bas âge, coiffeuse")
+    print("")
+    choice=int(input("Qui voulez-vous choisir ? (1/2/3)"))
+    return choice
+    
+
+def interface_call_friend_(choice,player_name,question,answer_A, answer_B, answer_C, answer_D, good_answer):
+    if choice == 1:
+            typewriter(" \n\
+                "+player_name+" : Allo Enzo ? Tu m'entends? \n\
+                Enzo : Allo ? \n\
+                "+player_name+" : Oui, bonjour Enzo, c'est "+player_name+" au téléphone, je suis en direct de Qui veut gagner des millions. J'aurais besoin de ton aide pour une question, tu es partant ? \n\
+                Enzo : Salut "+player_name+" , oui pas de soucis je t'écoute ! \n\
+                "+player_name+" : Ok alors la question est : "+question+ " et les réponses sont : A) "+answer_A+" B) "+answer_B+" C) "+answer_C+" D) "+answer_D+" ... tu en penses quoi ? \n\
+                Enzo : Alors je dirais que la bonne réponse est "+good_answer+" ! \n\
+                "+player_name+" : Super merci beaucoup, je te revaudrais ça ! À bientôt ! \n\
+                Enzo : Pas de soucis, bon courage pour la suite !")
+            print("")
+            print("")
+            print("")
+    if choice == 2:
+        typewriter(" \n\
+            "+player_name+" : Allo Antoine ? Tu m'entends? \n\
+            Antoine : Oh allo \n\
+            "+player_name+" : ça fait plaisir de t'entendre ça faisait longtemps \n\
+            Antoine : Haha merci moi aussi. \n\
+            "+player_name+" : Je participe à l'émission 'Qui veut gagner des millions' je sais pas si tu connais. Est-ce que tu pourrais m'aider pour une question frérot c'est dans ton domaine ? \n\
+            Antoine : Pas de soucis mon reuf, dis moi tout ! \n\
+            "+player_name+" : Vas y alors la question c'est : "+question+" et les propositions de réponses sont : A) "+answer_A+" B) "+answer_B+" C) "+answer_C+" D)"+answer_D+" ... tu mettrais quoi ? \n\
+            Antoine : Euh attends laisse moi réfléchir... Tente "+good_answer+" je croise les doigts pour toi. \n\
+            "+player_name+" : Ok parfait on va tenter ça, tu vas peut-être me sauver la vie là! \n\
+            Antoine : Haha avec plaisir hâte de te revoir !")                    
+        print("")
+        print("")
+        print("")
+
+    if choice == 3:
+        typewriter(" \n\
+            "+player_name+" : Allo Théa    ? \n\
+            Théa : Allo ? \n\
+            "+player_name+" : Oui, c'est "+player_name+" Tu peux m'aider pour une question ma belle ? \n\
+            Théa : Oh bébé c'est trop bien t'es trop fort! Dis-moi tout ! \n\
+            "+player_name+" : Ok alors la question est : "+question+ " et les réponses sont : A) "+answer_A+" B) "+answer_B+" C) "+answer_C+" D) "+answer_D+" ... tu mettrais quoi à ma place ? \n\
+            Théa : Euh... C'est dur! Alors attends par élimination je dirais "+good_answer+" ! \n\
+            "+player_name+" : Oh chérie merci beaucoup, je te revaudrais ça ! On se voit demain ! \n\
+            Théa : Continue comme ça donne tout !")                 
+        print("")
+        print("")
+        print("")
+
+def page_question_after_ami(number_player,player_name,validated_amount,current_amount,joker_available,number_question,question, answer_A, answer_B, answer_C, answer_D,good_answer):
+        interface_stats(number_player,player_name,validated_amount,current_amount,joker_available)
+        choice=ask_choice_friends()
+        print("")
+        print("                                                                         Vous avez utilisé le joker 'Appel a un ami' , Voici le résultat :    ")
+        print("")
+        print("")
+        interface_call_friend_(choice,player_name,question,answer_A, answer_B, answer_C, answer_D, good_answer)
+        interface_question(number_question,question, answer_A, answer_B, answer_C, answer_D)
 
 #________ Utils
 
@@ -251,7 +387,7 @@ def printSpacer(lines):
 def checkPlayerNumber(playernumber):
     try:
         pn = int(playernumber)
-        if pn in range(1,maxPlayerNumber):
+        if pn in range(1,maxPlayerNumber + 1):
             return True
         else:
             return False
@@ -290,6 +426,8 @@ game.append(phase3)
 
 #________ Main program
 
+#WelcomeUI()
+
 players = []
 currentPlayers = []
 playernumber = input("Combien de personnes jouent ? ")
@@ -321,7 +459,7 @@ for phase in game:
                     joker = input("Erreur, veuillez choisir un Joker parmi " + str(currentPlayer.getJokersLeft()) + ": ")
                 currentPlayer.useJoker(joker)
                 psub = getTwoPossibilities(currentQuestion.retrieveAnswerIndex())
-                JokerUI(joker,currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),questionnumber,currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3],currentQuestion.getPossibilities()[psub[0]],psub[0],currentQuestion.getPossibilities()[psub[1]],psub[1])
+                JokerUI(joker,currentPlayers.index(currentPlayer) + 1,currentPlayer.getName(),currentPlayer.getScore(),currentScore,currentPlayer.getJokersLeft(),questionnumber,currentQuestion.getQuestion(),currentQuestion.getPossibilities()[0],currentQuestion.getPossibilities()[1],currentQuestion.getPossibilities()[2],currentQuestion.getPossibilities()[3],currentQuestion.getPossibilities()[psub[0]],psub[0],currentQuestion.getPossibilities()[psub[1]],psub[1],currentQuestion.getAnswer())
                 answer = input("# ")
             if currentQuestion.getPossibilities()[ord(answer.lower()) - 97] is currentQuestion.getAnswer():
                 currentPlayer.setScore(currentScore)
